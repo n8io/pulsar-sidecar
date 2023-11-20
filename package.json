@@ -1,0 +1,32 @@
+{
+  "name": "pulsar-sidecar",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "scripts": {
+    "build": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node --target=node20 --sourcemap --external:express --external:body-parser --external:pulsar-client  --external:zod --external:zod-validation-error",
+    "build:watch": "npm run -s build -- --watch",
+    "dev": "concurrently \"npm run -s build:watch\" \"npm run -s start:watch\" --raw",
+    "start": "node dist/index.js",
+    "start:watch": "node --env-file=.env --watch dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pulsar-client": "^1.9.0",
+    "zod": "^3.22.4",
+    "zod-validation-error": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.19.5",
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,0 +1,62 @@
+version: '3'
+
+x-variables:
+  platform: &platform
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
+  busybox: &busybox
+    platform: linux/amd64
+    image: busybox:1.35.0
+
+services:
+  service:
+    <<: *platform
+    build:
+      context: ./
+    depends_on:
+      - dependencies-wait
+    environment:
+      - PORT=3500
+    ports:
+      - ${PORT:-3500}:3500
+    tty: ${TTY:-false}
+    volumes:
+      - ./src:/home/user/src:ro
+
+  pulsar:
+    # <<: *platform
+    platform: linux/amd64
+    image: apachepulsar/pulsar:2.11.2
+    environment:
+      - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
+    command: |
+      /bin/bash -c "
+        bin/apply-config-from-env.py conf/standalone.conf && \
+        bin/pulsar standalone
+      "
+    healthcheck:
+      interval: 1s
+      retries: 120
+      start_period: 5s
+      test: ./bin/pulsar-admin brokers healthcheck
+    ports:
+      - 3501:8080
+      - 6650:6650
+    user: root
+    volumes:
+      - pulsar-data:/pulsar/config
+      - pulsar-data:/pulsar/data
+
+  pulsar-wait:
+    <<: *busybox
+    depends_on:
+      pulsar:
+        condition: service_healthy
+
+  dependencies-wait:
+    <<: *busybox
+    depends_on:
+      - pulsar-wait
+
+volumes:
+  pulsar-data:
+    driver: local
