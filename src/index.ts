@@ -1,40 +1,47 @@
-import express from 'express';
-import { Client as PulsarClient } from 'pulsar-client';
-import { schemaPublishRequest } from './models';
-import { ZodError } from 'zod';
+import express from 'express'
+import { Client as PulsarClient } from 'pulsar-client'
+import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
+import { schemaPublishRequest } from './models'
 
-const port = parseInt(process.env.PORT || '3500');
-const serviceUrl = process.env.PULSAR_ENDPOINT || 'pulsar://pulsar:6650';
-const client = new PulsarClient({ serviceUrl });
-const app = express();
+const port = parseInt(process.env.PORT || '3500')
+const serviceUrl = process.env.PULSAR_ENDPOINT || 'pulsar://pulsar:6650'
+const client = new PulsarClient({ operationTimeoutSeconds: 3, serviceUrl })
+const app = express()
 
-const log = (message: string, ...args: any[]) =>
-  console.log(`${new Date().toISOString()} ${message}`, ...args)
+app.use(express.json())
 
-app.use(express.json());
+const useProducerContext = async (topic: string) => {
+  const producer = await client.createProducer({ sendTimeoutMs: 3_000, topic })
+
+  return {
+    producer,
+    [Symbol.asyncDispose]: async () => {
+      await producer.close()
+    },
+  }
+}
 
 app.post('/publish', async (req, res) => {
   let request
 
   try {
-    request = schemaPublishRequest.parse(req.body);
+    request = schemaPublishRequest.parse(req.body)
   } catch (error: unknown) {
-    res.status(400).json({ error: fromZodError(error as ZodError) });
+    res.status(400).json({ error: fromZodError(error as ZodError) })
 
-    return;
+    return
   }
 
-  const { message, topic } = request;
-  const producer = await client.createProducer({ topic });
-
-  log('📤 Publishing message...', message);
-  await producer.send({ data: Buffer.from(JSON.stringify(message)) })
-  log('👍 Message published.');
-
-  await producer.close();
+  const { message, topic } = request
   
-  res.status(204).send();
-});
+  await using ctx = await useProducerContext(topic)
 
-app.listen(port, () => log(`🚀 pulsar-sidecar is running at http://localhost:${port}`));
+  console.log(`📤 Publishing message on "${topic}" topic...`, message)
+  await ctx.producer.send({ data: Buffer.from(JSON.stringify(message)) })
+  console.log(`👍 Message published @ ${new Date().toISOString()}`)
+
+  res.status(204).send()
+})
+
+app.listen(port, () => console.log(`🚀 pulsar-sidecar is running at http://localhost:${port}`))

@@ -2,7 +2,7 @@ version: '3'
 
 x-variables:
   platform: &platform
-    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
+    platform: linux/amd64
   busybox: &busybox
     platform: linux/amd64
     image: busybox:1.35.0
@@ -16,9 +16,10 @@ services:
       - dependencies-wait
     environment:
       - PORT=3500
+    networks:
+      - pulsar
     ports:
       - ${PORT:-3500}:3500
-    tty: ${TTY:-false}
     volumes:
       - ./src:/home/user/src:ro
 
@@ -38,6 +39,8 @@ services:
       retries: 120
       start_period: 5s
       test: ./bin/pulsar-admin brokers healthcheck
+    networks:
+      - pulsar
     ports:
       - 3501:8080
       - 6650:6650
@@ -57,6 +60,9 @@ services:
     depends_on:
       - pulsar-wait
 
+networks:
+  pulsar:
+    name: pulsar
 volumes:
   pulsar-data:
     driver: local
