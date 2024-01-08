@@ -8,13 +8,13 @@
 
 ```bash
 # Copy/hydrate .env
-cp -n .env.example .env && nano .env
+cp -n .env.example .env
 
 # Start the pulsar container
-docker compose up -d pulsar-wait
+docker compose up --detach pulsar-wait
 
 # Build image
-docker build . -t pulsar-sidecar
+docker build . --tag pulsar-sidecar
 
 # Start the api @ http://localhost:3500
 docker run --publish 3500:3500 pulsar-sidecar
@@ -49,7 +49,7 @@ npm install
 
 ```bash
 # Start the pulsar container
-docker compose up -d pulsar-wait
+docker compose up --detach pulsar-wait
 
 # Start in watch mode
 npm run dev
