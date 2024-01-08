@@ -7,6 +7,9 @@
 ### Running Standalone
 
 ```bash
+# Copy/hydrate .env
+cp -n .env.example .env && nano .env
+
 # Start the pulsar container
 docker compose up -d pulsar-wait
 
@@ -14,7 +17,23 @@ docker compose up -d pulsar-wait
 docker build . -t pulsar-sidecar
 
 # Start the api @ http://localhost:3500
-docker run --network=pulsar --publish 3500:3500 pulsar-sidecar
+docker run --publish 3500:3500 pulsar-sidecar
+
+# Publish a message
+curl --request POST \
+  --url http://localhost:3500/publish \
+  --header 'Content-Type: application/json' \
+  --data '
+  {
+    "message": {
+      "data": {
+      "test": 1
+      },
+      "messageType": "entity.updated"
+    },
+    "topic": "my-topic"
+  }
+  '
 ```
 
 ## Local Development

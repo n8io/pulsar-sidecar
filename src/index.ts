@@ -5,7 +5,7 @@ import { fromZodError } from 'zod-validation-error'
 import { schemaPublishRequest } from './models'
 
 const port = parseInt(process.env.PORT || '3500')
-const serviceUrl = process.env.PULSAR_ENDPOINT || 'pulsar://pulsar:6650'
+const serviceUrl = process.env.PULSAR_ENDPOINT || 'pulsar://localhost:6650'
 const client = new PulsarClient({ operationTimeoutSeconds: 3, serviceUrl })
 const app = express()
 

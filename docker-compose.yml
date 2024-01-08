@@ -2,9 +2,11 @@ version: '3'
 
 x-variables:
   platform: &platform
+    # uncomment this line when arm64 support is available (pulsar v12)
+    # platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64
     platform: linux/amd64
   busybox: &busybox
-    platform: linux/amd64
+    platform: linux/amd64 # busybox is not available for arm64 yet hence we force
     image: busybox:1.35.0
 
 services:
@@ -16,17 +18,16 @@ services:
       - dependencies-wait
     environment:
       - PORT=3500
-    networks:
-      - pulsar
+      - PULSAR_ENDPOINT=pulsar://pulsar:6650
     ports:
       - ${PORT:-3500}:3500
     volumes:
       - ./src:/home/user/src:ro
 
   pulsar:
-    # <<: *platform
-    platform: linux/amd64
-    image: apachepulsar/pulsar:2.11.2
+    # <<: *platform # uncomment this line when arm64 support is available (v12)
+    platform: linux/amd64 # remove this hard coded line when arm64 support is available (v12)
+    image: apachepulsar/pulsar:2.11.3
     environment:
       - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
     command: |
@@ -39,8 +40,6 @@ services:
       retries: 120
       start_period: 5s
       test: ./bin/pulsar-admin brokers healthcheck
-    networks:
-      - pulsar
     ports:
       - 3501:8080
       - 6650:6650
@@ -60,9 +59,6 @@ services:
     depends_on:
       - pulsar-wait
 
-networks:
-  pulsar:
-    name: pulsar
 volumes:
   pulsar-data:
     driver: local
