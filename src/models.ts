@@ -10,15 +10,8 @@ const schemaJson: z.ZodType<Json> = z.lazy(() =>
   z.union([literalSchema, z.array(schemaJson), z.record(schemaJson)])
 );
 
-const schemaPulsarMessage = z.object({
-  data: schemaJson,
-  messageDispatchedAt: z.number().optional(),
-  messageId: schemaString.optional(),
-  messageType: schemaString,
-}).passthrough()
-
 const schemaPublishRequest = z.object({
-  message: schemaPulsarMessage,
+  message: schemaJson,
   topic: schemaString,
 })
 
